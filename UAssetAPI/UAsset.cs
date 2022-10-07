@@ -10,6 +10,7 @@ using UAssetAPI.JSON;
 using UAssetAPI.PropertyTypes.Objects;
 using UAssetAPI.UnrealTypes;
 using UAssetAPI.ExportTypes;
+using UAssetAPI.PropertyTypes.Structs;
 
 namespace UAssetAPI
 {
@@ -1157,6 +1158,7 @@ namespace UAssetAPI
                                     Exports[i] = Exports[i].ConvertToChildExport<NormalExport>();
                                     Exports[i].Read(reader, (int)nextStarting);
                                 }
+
                                 break;
                         }
 
@@ -1181,6 +1183,91 @@ namespace UAssetAPI
                     }
                 }
             }
+
+            string[] exclude = new string[] { };
+            
+            // HUB Level Skiff Excldes
+            //{
+            //    "blockingvolume10_0",
+            //    "blockingvolume84",
+            //    "collision_cube75",
+            //    "collision_cube76",
+            //    "collision_cube77",
+            //    "collision_cube78",
+            //    "collision_cube79",
+            //    "collision_cube80",
+            //    "collision_cube82",
+            //    "collision_cube83",
+            //    "collision_cube185",
+            //    "collision_cube187",
+            //    "collision_cube192",
+            //    "collision_cube193",
+            //    "collision_cube194",
+            //    "collision_cube195",
+            //    "collision_cube197",
+            //    "collision_volume9",
+            //    "collision_volume15",
+            //    "collision_volume82",
+            //    "collision_volume85",
+            //    "collision_volume86",
+            //    "collision_cylinder72"
+            //    };
+
+            string[] include = new string[] { "collision", "blocking" };
+
+            List<int> excludeExports = new List<int>();
+            List<int> includeExports = new List<int>();
+
+            /*
+            foreach (Export ex in Exports)
+            {
+                try
+                {
+                    if (!exclude.Contains(ex.ObjectName.ToString().ToLower()))
+                    {
+                        foreach (string s in include)
+                        {
+                            if (ex.ObjectName.ToString().ToLower().Contains(s))
+                            {
+                                for (int i = 0; i < ((NormalExport)ex).Data.Count(); i++)
+                                {
+                                    var d = ((NormalExport)ex).Data[i] as ObjectPropertyData;
+                                    try
+                                    {
+                                        if (d.Name.ToString() == "RootComponent")
+                                        {
+                                            includeExports.Add(d.Value.Index);
+                                        }
+                                    }
+                                    catch { }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                if (includeExports.Contains(Exports.IndexOf(ex)+1))
+                {
+                    for (int i = 0; i < ((NormalExport)ex).Data.Count(); i++)
+                    {
+                        var d = ((NormalExport)ex).Data[i] as StructPropertyData;
+                        try
+                        {
+                            if (d.Name.ToString() == "RelativeScale3D")
+                            {
+                                ((VectorPropertyData)d.Value[0]).Value = new FVector(0.0000001f, 0.0000001f, 0.0000001f);
+                            }
+                            else if (d.Name.ToString() == "RelativeLocation")
+                            {
+                                ((VectorPropertyData)d.Value[0]).Value = new FVector(0.0000001f, 0.0000001f, -100000f);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }*/
         }
 
         /// <summary>

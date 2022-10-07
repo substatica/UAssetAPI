@@ -40,7 +40,14 @@ namespace UAssetAPI.PropertyTypes.Structs
             if (data == null) return;
             data.Offset = offset;
             data.Read(reader, false, 0);
-            Value = new List<PropertyData> { data };
+            //if(data.Name.ToString() == "RelativeScale3D"
+            //    || data.Name.ToString() == "RelativeLocation")
+            //{
+            //    ((PropertyData<FVector>)data).Value = new FVector(0.0000001f, 0.0000001f, 0.0000001f);
+            //    Value = new List<PropertyData> { data };
+            //} else { 
+                Value = new List<PropertyData> { data };
+            //}
         }
 
         private void ReadNTPL(AssetBinaryReader reader)

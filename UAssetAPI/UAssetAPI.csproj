@@ -61,6 +61,7 @@
     <Compile Include="ExportTypes\PropertyExport.cs" />
     <Compile Include="ExportTypes\StringTableExport.cs" />
     <Compile Include="ExportTypes\StructExport.cs" />
+    <Compile Include="GuidUpdate.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
