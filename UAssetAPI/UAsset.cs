@@ -607,7 +607,9 @@ namespace UAssetAPI
         public FString FolderName;
 
         /// <summary>
-        /// In MapProperties that have StructProperties as their keys or values, there is no universal, context-free way to determine the type of the struct. To that end, this dictionary maps MapProperty names to the type of the structs within them (tuple of key struct type and value struct type) if they are not None-terminated property lists.
+        /// In MapProperties that have StructProperties as their keys or values, there is no universal, context-free way to determine the type of the struct.
+        /// <para />
+        /// To that end, this dictionary maps MapProperty names to the type of the structs within them (tuple of key struct type and value struct type) if they are not None-terminated property lists.
         /// </summary>
         [JsonIgnore]
         public Dictionary<string, Tuple<FString, FString>> MapStructTypeOverride = new Dictionary<string, Tuple<FString, FString>>()
@@ -622,8 +624,19 @@ namespace UAssetAPI
             { "Hierarchy", new Tuple<FString, FString>(new FString("MovieSceneSequenceID"), null)},
             { "TrackSignatureToTrackIdentifier", new Tuple<FString, FString>(new FString("Guid"), new FString("MovieSceneTrackIdentifier"))},
             { "ItemsToRefund", new Tuple<FString, FString>(new FString("Guid"), null) },
-            { "PlayerCharacterIDMap", new Tuple<FString, FString>(new FString("Guid"), null) }
+            { "PlayerCharacterIDMap", new Tuple<FString, FString>(new FString("Guid"), null) },
+            { "RainChanceMinMaxPerWeatherState", new Tuple<FString, FString>(null, new FString("FloatRange")) }
+        };
 
+        /// <summary>
+        /// IN ENGINE VERSIONS BEFORE <see cref="UE4Version.VER_UE4_INNER_ARRAY_TAG_INFO"/>:
+        /// <para />
+        /// In ArrayProperties that have StructProperties as their keys or values, there is no universal, context-free way to determine the type of the struct. To that end, this dictionary maps ArrayProperty names to the type of the structs within them.
+        /// </summary>
+        [JsonIgnore]
+        public Dictionary<string, FString> ArrayStructTypeOverride = new Dictionary<string, FString>()
+        {
+            { "Keys", new FString("RichCurveKey") }
         };
 
         /// <summary>
@@ -1148,7 +1161,7 @@ namespace UAssetAPI
                                         }
                                     }
                                 }
-                                else if (MainSerializer.PropertyTypeRegistry.ContainsKey(exportClassType))
+                                else if (MainSerializer.PropertyTypeRegistry.ContainsKey(exportClassType) || exportClassType == "ClassProperty")
                                 {
                                     Exports[i] = Exports[i].ConvertToChildExport<PropertyExport>();
                                     Exports[i].Read(reader, (int)nextStarting);
@@ -1801,6 +1814,61 @@ namespace UAssetAPI
         {
             Info = "Serialized with UAssetAPI " + typeof(PropertyData).Assembly.GetName().Version + (string.IsNullOrEmpty(UAPUtils.CurrentCommit) ? "" : (" (" + UAPUtils.CurrentCommit + ")"));
             return JsonConvert.SerializeObject(this, jsonFormatting, jsonSettings);
+        }
+
+        /// <summary>
+        /// Serializes an object as JSON.
+        /// </summary>
+        /// <param name="value">The object to serialize as JSON.</param>
+        /// <param name="jsonFormatting">The formatting to use for the returned JSON string.</param>
+        /// <returns>A serialized JSON string that represents the object.</returns>
+        public string SerializeJsonObject(object value, Formatting jsonFormatting = Formatting.None)
+        {
+            return JsonConvert.SerializeObject(value, jsonFormatting, jsonSettings);
+        }
+
+        /// <summary>
+        /// Deserializes an object from JSON.
+        /// </summary>
+        /// <param name="json">A serialized JSON string to parse.</param>
+        public object DeserializeJsonObject(string json)
+        {
+            Dictionary<FName, string> toBeFilled = new Dictionary<FName, string>();
+            object res = JsonConvert.DeserializeObject(json, new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.Objects,
+                NullValueHandling = NullValueHandling.Include,
+                FloatParseHandling = FloatParseHandling.Double,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                ContractResolver = new UAssetContractResolver(toBeFilled),
+                Converters = new List<JsonConverter>()
+                {
+                    new FSignedZeroJsonConverter(),
+                    new FNameJsonConverter(null),
+                    new FStringTableJsonConverter(),
+                    new FStringJsonConverter(),
+                    new FPackageIndexJsonConverter(),
+                    new StringEnumConverter()
+                }
+            });
+
+            foreach (KeyValuePair<FName, string> entry in toBeFilled)
+            {
+                entry.Key.Asset = this;
+                if (entry.Value == string.Empty)
+                {
+                    entry.Key.DummyValue = new FString(entry.Value);
+                }
+                else
+                {
+                    var dummy = FName.FromString(this, entry.Value);
+                    entry.Key.Value = dummy.Value;
+                    entry.Key.Number = dummy.Number;
+                }
+            }
+            toBeFilled.Clear();
+
+            return res;
         }
 
         /// <summary>
